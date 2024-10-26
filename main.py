@@ -1,19 +1,19 @@
 import re
 import sqlite3
 
-conn = sqlite3.connect('text.db')
-cursor = conn.cursor()
-
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    surname TEXT NOT NULL,
-    address TEXT,
-    email TEXT NOT NULL UNIQUE
-)
-''')
-
+def create_db_connection(db_name='text.db'):
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        surname TEXT NOT NULL,
+        address TEXT,
+        email TEXT NOT NULL UNIQUE
+    )
+    ''')
+    return cursor, conn
 
 def is_valid_email(email):
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -70,39 +70,40 @@ def get_user(email, cursor):
     cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
     user = cursor.fetchone()
     if user:
-        return True, f"Пользователь найден: ID: {user[0]}, Имя: {user[1]}, Фамилия: {user[2]}, Адрес: {user[3]}, Email: {user[4]}"
+        return True, f"Пользователь найден: Имя: {user[1]}, Фамилия: {user[2]}, Адрес: {user[3]}, Email: {user[4]}"
     return False, "Ошибка: Пользователь с таким email не найден."
 
-
-action = None
-while action != 0:
-    try:
-        action = int(input(
-            'Добавить пользователя - 1, Обновить данные пользователя - 2, Удалить пользователя - 3, Получить пользователя - 4, Выйти - 0: '))
-        if action == 1:
-            name = input("Введите имя пользователя: ")
-            surname = input("Введите фамилию пользователя: ")
-            address = input("Введите адрес пользователя (ENTER - пропустить): ")
-            email = input("Введите email пользователя: ")
-            success, message = add(name, surname, address, email, cursor, conn)
-        elif action == 2:
-            email = input("Введите email пользователя для обновления: ")
-            name = input("Введите новое имя пользователя (ENTER - не обновлять): ")
-            surname = input("Введите новую фамилию пользователя (ENTER - не обновлять): ")
-            address = input("Введите новый адрес пользователя (ENTER - не обновлять): ")
-            success, message = update(name, surname, address, email, cursor, conn)
-        elif action == 3:
-            email = input("Введите email пользователя, которого нужно удалить: ")
-            success, message = delete(email, cursor, conn)
-        elif action == 4:
-            email = input("Введите email пользователя для получения данных: ")
-            success, message = get_user(email, cursor)
-        elif action == 0:
-            success, message = True, "Выход из программы."
-        else:
+if __name__ == '__main__':
+    cursor, conn = create_db_connection()
+    action = None
+    while action != 0:
+        try:
+            action = int(input(
+                'Добавить пользователя - 1, Обновить данные пользователя - 2, Удалить пользователя - 3, Получить пользователя - 4, Выйти - 0: '))
+            if action == 1:
+                name = input("Введите имя пользователя: ")
+                surname = input("Введите фамилию пользователя: ")
+                address = input("Введите адрес пользователя (ENTER - пропустить): ")
+                email = input("Введите email пользователя: ")
+                success, message = add(name, surname, address, email, cursor, conn)
+            elif action == 2:
+                email = input("Введите email пользователя для обновления: ")
+                name = input("Введите новое имя пользователя (ENTER - не обновлять): ")
+                surname = input("Введите новую фамилию пользователя (ENTER - не обновлять): ")
+                address = input("Введите новый адрес пользователя (ENTER - не обновлять): ")
+                success, message = update(name, surname, address, email, cursor, conn)
+            elif action == 3:
+                email = input("Введите email пользователя, которого нужно удалить: ")
+                success, message = delete(email, cursor, conn)
+            elif action == 4:
+                email = input("Введите email пользователя для получения данных: ")
+                success, message = get_user(email, cursor)
+            elif action == 0:
+                success, message = True, "Выход из программы."
+            else:
+                success, message = False, "Неверный ввод, пожалуйста, попробуйте снова."
+            print(message)
+        except ValueError:
             success, message = False, "Неверный ввод, пожалуйста, попробуйте снова."
-        print(message)
-    except ValueError:
-        success, message = False, "Неверный ввод, пожалуйста, попробуйте снова."
-        print(message)
-conn.close()
+            print(message)
+    conn.close()
